@@ -94,6 +94,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
   private val execRequestTimes = new HashMap[Int, Queue[(Int, Long)]]
 
   private val listenerBus = scheduler.sc.listenerBus
+  private val heartbeatReceiver = scheduler.sc.heartbeatReceiver
 
   // Executors we have requested the cluster manager to kill that have not died yet; maps
   // the executor ID to whether it was explicitly killed by the driver (and thus shouldn't
@@ -309,6 +310,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
               currentExecutorIdCounter = executorId.toInt
             }
           }
+          heartbeatReceiver.ask[Boolean](ExecutorRegistered(executorId))
           listenerBus.post(
             SparkListenerExecutorAdded(System.currentTimeMillis(), executorId, data))
           // Note: some tests expect the reply to come after we put the executor in the map
